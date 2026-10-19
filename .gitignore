@@ -1,0 +1,41 @@
+# Android / Gradle
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/local.properties
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+*.iml
+.idea/
+.vscode/
+*.jks
+*.keystore
+keystore.properties
+
+# Build outputs (APK 唔入 git；見 docs/BUILD.md)
+dist/
+*.apk
+*.aab
+
+# Python / server runtime
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+server/data/
+server/.cache/
+
+# Validation datasets and caches (唔包喺 repo)
+*.npz
+*.wav
+*.mp3
+*.m4a
+
+# OS / secrets
+.DS_Store
+Thumbs.db
+.env
+.env.*

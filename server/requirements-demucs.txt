@@ -1,0 +1,4 @@
+# Optional: guitar / no-guitar stem separation (htdemucs_6s). Large download (~2 GB with PyTorch).
+# CPU-only PyTorch is enough (a 4-minute song takes roughly 1-5 minutes depending on the CPU).
+# NVIDIA GPU: install the CUDA build of torch first from https://pytorch.org/get-started/locally/
+demucs>=4.0.1

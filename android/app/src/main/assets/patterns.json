@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "strum": [
+    {"id": "s_quarter", "name": "四分下掃", "level": 1, "beatsPerBar": 4, "subdivision": 2, "steps": "D-D-D-D-", "bpm": [50, 110], "tip": "每拍一下，手腕放鬆，由第 6 弦掃到第 1 弦。", "styles": ["ballad", "any"]},
+    {"id": "s_eighth_down", "name": "八分全下", "level": 1, "beatsPerBar": 4, "subdivision": 2, "steps": "DDDDDDDD", "bpm": [60, 120], "tip": "全部向下，力度平均，練穩定節拍。", "styles": ["rock"]},
+    {"id": "s_alt", "name": "八分上下交替", "level": 1, "beatsPerBar": 4, "subdivision": 2, "steps": "DUDUDUDU", "bpm": [60, 120], "tip": "手好似鐘擺咁一直上落，上掃只需掃高音 3-4 條弦。", "styles": ["pop", "any"]},
+    {"id": "s_waltz", "name": "3/4 華爾茲", "level": 1, "beatsPerBar": 3, "subdivision": 2, "steps": "D-D-D-", "bpm": [60, 140], "tip": "第一拍重，其餘兩拍輕。", "styles": ["waltz"]},
+    {"id": "s_folk", "name": "民謠經典 D-DU-UDU", "level": 2, "beatsPerBar": 4, "subdivision": 2, "steps": "D-DU-UDU", "bpm": [60, 120], "tip": "第 3 拍嘅下掃『空揮』唔掂弦，手唔好停。", "styles": ["pop", "folk", "any"]},
+    {"id": "s_pop1", "name": "流行 D-D-DUDU", "level": 2, "beatsPerBar": 4, "subdivision": 2, "steps": "D-D-DUDU", "bpm": [60, 120], "tip": "前半小節穩，後半小節加密。", "styles": ["pop"]},
+    {"id": "s_pop2", "name": "流行 D-DUDUDU", "level": 2, "beatsPerBar": 4, "subdivision": 2, "steps": "D-DUDUDU", "bpm": [60, 120], "tip": "第一拍之後一路上落。", "styles": ["pop", "rock"]},
+    {"id": "s_ballad", "name": "抒情 D-DU-UD-", "level": 2, "beatsPerBar": 4, "subdivision": 2, "steps": "D-DU-UD-", "bpm": [56, 96], "tip": "慢歌常用，最後半拍留白。", "styles": ["ballad"]},
+    {"id": "s_waltz_du", "name": "3/4 D-DUDU", "level": 2, "beatsPerBar": 3, "subdivision": 2, "steps": "D-DUDU", "bpm": [60, 140], "tip": "3/4 拍加上掃。", "styles": ["waltz"]},
+    {"id": "s_reggae", "name": "反拍 -D-D-D-D", "level": 2, "beatsPerBar": 4, "subdivision": 2, "steps": "-D-D-D-D", "bpm": [60, 110], "tip": "只喺反拍（and）掃短促下掃。", "styles": ["reggae", "ska"]},
+    {"id": "s_rumba", "name": "倫巴（golpe 悶音）", "level": 3, "beatsPerBar": 4, "subdivision": 2, "steps": "D-xUD-xU", "bpm": [70, 130], "tip": "x = 用手掌側面拍弦悶音（golpe），古典／Flamenco 結他常用。", "styles": ["latin", "rumba"]},
+    {"id": "s_16th", "name": "十六分流行", "level": 3, "beatsPerBar": 4, "subdivision": 4, "steps": "D-DU-UDUD-DU-UDU", "bpm": [50, 100], "tip": "手每 16 分音符上落一次，只喺有字母嘅位置掂弦。", "styles": ["funk", "pop"]},
+    {"id": "s_16th_funk", "name": "Funk 16 分", "level": 3, "beatsPerBar": 4, "subdivision": 4, "steps": "D-xUD-xUD-xUD-xU", "bpm": [60, 100], "tip": "x 位係悶音 chuck，保持 16 分手勢。", "styles": ["funk"]}
+  ],
+  "finger": [
+    {"id": "f_pima", "name": "p-i-m-a 上行琶音", "level": 1, "beatsPerBar": 4, "subdivision": 2, "steps": ["p", "i", "m", "a", "p", "i", "m", "a"], "bpm": [50, 110], "tip": "拇指 p 彈低音（和弦根音弦），i m a 分別彈 3、2、1 弦。", "styles": ["ballad", "classical"]},
+    {"id": "f_pami", "name": "p-a-m-i 下行琶音", "level": 1, "beatsPerBar": 4, "subdivision": 2, "steps": ["p", "a", "m", "i", "p", "a", "m", "i"], "bpm": [50, 110], "tip": "由高音弦向低音弦回落。", "styles": ["ballad", "classical"]},
+    {"id": "f_alberti", "name": "p-i-m-i 分解", "level": 1, "beatsPerBar": 4, "subdivision": 2, "steps": ["p", "i", "m", "i", "p", "i", "m", "i"], "bpm": [50, 120], "tip": "最基本嘅伴奏，i m 交替要平均。", "styles": ["pop", "ballad"]},
+    {"id": "f_block", "name": "低音 + 和弦 (p / ima)", "level": 1, "beatsPerBar": 4, "subdivision": 1, "steps": ["p", "ima", "p2", "ima"], "bpm": [60, 120], "tip": "第 1、3 拍拇指，第 2、4 拍三隻手指一齊撥。", "styles": ["folk", "any"]},
+    {"id": "f_waltz", "name": "3/4 低音 + 和弦", "level": 1, "beatsPerBar": 3, "subdivision": 1, "steps": ["p", "im", "im"], "bpm": [60, 140], "tip": "華爾茲伴奏。", "styles": ["waltz"]},
+    {"id": "f_pimami", "name": "p-i-m-a-m-i (3/4)", "level": 2, "beatsPerBar": 3, "subdivision": 2, "steps": ["p", "i", "m", "a", "m", "i"], "bpm": [50, 120], "tip": "古典結他最常見嘅 3/4 琶音。", "styles": ["waltz", "classical"]},
+    {"id": "f_pinch", "name": "Pinch (pa) 琶音", "level": 2, "beatsPerBar": 4, "subdivision": 2, "steps": ["pa", "i", "m", "i", "pa", "i", "m", "i"], "bpm": [50, 110], "tip": "pa = 拇指同無名指同時撥（低音 + 旋律）。", "styles": ["ballad", "folk"]},
+    {"id": "f_travis", "name": "Travis picking", "level": 3, "beatsPerBar": 4, "subdivision": 2, "steps": ["p", "m", "p2", "i", "p", "m", "p2", "i"], "bpm": [50, 110], "tip": "拇指每拍交替低音（根音 / 第二低音），手指喺反拍。", "styles": ["folk", "country"]},
+    {"id": "f_bossa", "name": "Bossa Nova", "level": 3, "beatsPerBar": 4, "subdivision": 2, "steps": ["p", "-", "ima", "p2", "-", "ima", "p", "ima"], "bpm": [60, 130], "tip": "拇指穩定彈 1、3 拍，和弦切分，尼龍弦最啱。", "styles": ["bossa", "latin", "jazz"]},
+    {"id": "f_romance", "name": "Romance 三連音（pa-m-i）", "level": 3, "beatsPerBar": 3, "subdivision": 3, "steps": ["pa", "m", "i", "a", "m", "i", "a", "m", "i"], "bpm": [50, 100], "tip": "《愛的羅曼史》式三連音，a 指旋律要突出。", "styles": ["classical"]}
+  ]
+}

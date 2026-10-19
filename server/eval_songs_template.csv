@@ -1,0 +1,3 @@
+url,title,bpm,key,capo,chords,feel
+# 每行一首歌；chords = 由和弦譜抄嘅和弦序列（空格分隔，重複都抄埋），例如：,,,,,,
+https://www.youtube.com/watch?v=REPLACE_ME,歌名,96,G,0,G D Em C G D C,

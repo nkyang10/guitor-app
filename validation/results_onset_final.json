@@ -1,0 +1,128 @@
+{
+ "A_lam1_lag2_d1.0": {
+  "synthetic_strum_strict": {
+   "recall": 0.881,
+   "far_false_per_min": 0.0,
+   "sd_ms": 7.5
+  },
+  "synthetic_pluck_strict": {
+   "recall": 0.957,
+   "far_false_per_min": 0.9,
+   "sd_ms": 2.3
+  },
+  "synthetic_strum_guided": {
+   "recall": 0.991,
+   "far_false_per_min": 0.0,
+   "sd_ms": 8.8
+  },
+  "synthetic_pluck_guided": {
+   "recall": 1.0,
+   "far_false_per_min": 0.9,
+   "sd_ms": 2.4
+  },
+  "real_comp_strict": {
+   "recall": 0.9,
+   "far_false_per_min": 27.2,
+   "sd_ms": 17.6
+  },
+  "real_solo_strict": {
+   "recall": 0.983,
+   "far_false_per_min": 33.4,
+   "sd_ms": 22.3
+  },
+  "real_comp_guided": {
+   "recall": 0.967,
+   "far_false_per_min": 27.2,
+   "sd_ms": 18.1
+  },
+  "real_solo_guided": {
+   "recall": 0.99,
+   "far_false_per_min": 33.4,
+   "sd_ms": 22.4
+  }
+ },
+ "B_lam100_lag1_d0.3": {
+  "synthetic_strum_strict": {
+   "recall": 0.889,
+   "far_false_per_min": 2.4,
+   "sd_ms": 5.1
+  },
+  "synthetic_pluck_strict": {
+   "recall": 0.945,
+   "far_false_per_min": 0.9,
+   "sd_ms": 1.9
+  },
+  "synthetic_strum_guided": {
+   "recall": 1.0,
+   "far_false_per_min": 2.4,
+   "sd_ms": 5.6
+  },
+  "synthetic_pluck_guided": {
+   "recall": 1.0,
+   "far_false_per_min": 0.9,
+   "sd_ms": 2.0
+  },
+  "real_comp_strict": {
+   "recall": 0.965,
+   "far_false_per_min": 46.2,
+   "sd_ms": 20.9
+  },
+  "real_solo_strict": {
+   "recall": 0.983,
+   "far_false_per_min": 96.6,
+   "sd_ms": 24.1
+  },
+  "real_comp_guided": {
+   "recall": 0.992,
+   "far_false_per_min": 46.2,
+   "sd_ms": 21.5
+  },
+  "real_solo_guided": {
+   "recall": 0.99,
+   "far_false_per_min": 96.6,
+   "sd_ms": 24.4
+  }
+ },
+ "C_lam10_lag2_d1.0": {
+  "synthetic_strum_strict": {
+   "recall": 0.89,
+   "far_false_per_min": 0.9,
+   "sd_ms": 6.9
+  },
+  "synthetic_pluck_strict": {
+   "recall": 0.945,
+   "far_false_per_min": 1.2,
+   "sd_ms": 1.7
+  },
+  "synthetic_strum_guided": {
+   "recall": 1.0,
+   "far_false_per_min": 0.9,
+   "sd_ms": 7.8
+  },
+  "synthetic_pluck_guided": {
+   "recall": 1.0,
+   "far_false_per_min": 1.2,
+   "sd_ms": 1.9
+  },
+  "real_comp_strict": {
+   "recall": 0.929,
+   "far_false_per_min": 30.8,
+   "sd_ms": 19.3
+  },
+  "real_solo_strict": {
+   "recall": 0.983,
+   "far_false_per_min": 49.7,
+   "sd_ms": 22.8
+  },
+  "real_comp_guided": {
+   "recall": 0.975,
+   "far_false_per_min": 30.8,
+   "sd_ms": 19.6
+  },
+  "real_solo_guided": {
+   "recall": 0.989,
+   "far_false_per_min": 49.7,
+   "sd_ms": 23.0
+  }
+ }
+}
