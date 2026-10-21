@@ -257,7 +257,7 @@ fun ChordDetailContent(shape: ChordShape, notes: List<String>, check: ChordCheck
                 (fadeIn() + scaleIn(spring(dampingRatio = 0.5f), initialScale = 0.85f)) togetherWith fadeOut()
             }, label = "check") { _ -> CheckResult(shape, check) }
         }
-        SectionCard("練習小貼士", icon = "🌼", tone = Tone.MINT) {
+        SectionCard("練習小貼士", icon = "🎶", tone = Tone.MINT) {
             Hint("• 手指企直，用指尖按，貼近琴格（唔係格中間）。", Palette.Text)
             Hint("• 逐條弦撥一次聽下有冇悶音，再成個和弦掃。", Palette.Text)
             Hint("• 古典結他琴頸闊：拇指放喺琴頸後面中間，手腕微微向前。", Palette.Text)

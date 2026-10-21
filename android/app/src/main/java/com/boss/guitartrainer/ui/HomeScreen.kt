@@ -303,7 +303,7 @@ private fun WelcomeCard(onSave: (String) -> Unit) {
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { if (name.isNotBlank()) onSave(name.trim()) }))
             Spacer(Modifier.width(10.dp))
-            PillButton("好", { onSave(name.trim()) }, enabled = name.isNotBlank(), emoji = "🌷", height = 52.dp)
+            PillButton("好", { onSave(name.trim()) }, enabled = name.isNotBlank(), emoji = "🎶", height = 52.dp)
         }
     }
 }
@@ -320,7 +320,7 @@ private fun WeekCard(s: TodayState) {
     SectionCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("本星期", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-            Text(if (s.bestStreak > 0) "最長連續 ${s.bestStreak} 日" else "練一日就有朵花 🌼", style = MaterialTheme.typography.labelMedium, color = Palette.Muted)
+            Text(if (s.bestStreak > 0) "最長連續 ${s.bestStreak} 日" else "練一日就有粒音符 🎵", style = MaterialTheme.typography.labelMedium, color = Palette.Muted)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             s.week.forEach { d ->
@@ -332,7 +332,7 @@ private fun WeekCard(s: TodayState) {
                         .then(if (d.isToday) Modifier.border(2.dp, Palette.Coral, CircleShape)
                               else if (d.future) Modifier.border(1.5.dp, Palette.Line, CircleShape) else Modifier),
                         contentAlignment = Alignment.Center) {
-                        if (d.practiced) Text("🌼", fontSize = 18.sp)
+                        if (d.practiced) Text("🎵", fontSize = 18.sp)
                         else if (!d.future) Box(Modifier.size(6.dp).clip(CircleShape).background(Palette.Grid.copy(alpha = 0.6f)))
                     }
                 }

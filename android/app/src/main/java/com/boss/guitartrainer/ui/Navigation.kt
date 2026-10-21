@@ -36,7 +36,7 @@ val TABS = listOf(
     TabItem("home", "☀️", "今日", Tone.SUN),
     TabItem("hub", "🎸", "練習", Tone.CORAL),
     TabItem("songs", "🎵", "歌曲", Tone.SKY),
-    TabItem("me", "🌷", "我的", Tone.ROSE),
+    TabItem("me", "🎧", "我的", Tone.ROSE),
 )
 /** Switch bottom tabs like a normal app: one copy of each tab, state kept per tab. */
 fun NavController.navigateTab(route: String) = navigate(route) {

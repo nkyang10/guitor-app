@@ -12,6 +12,7 @@ Android（Kotlin + Jetpack Compose）為主；屋企電腦 server（Python FastA
 
 ## 狀態
 
+- **v0.2.2**：App 入面嘅花 emoji 全部改成音樂 emoji（🎵 🎶 🎧 🎤），例如「今日」本星期改為亮音符、「我的」tab 同頭像改為 🎧。
 - **v0.2.1**：修正「揀手機入面嘅音樂檔」分析時閃退（長歌 / 高解析度檔記憶體唔夠）。而家逐段解碼，10 分鐘歌最多用大約 64 MB（以前 4 分鐘歌已經要 ~130 MB）；長過 10 分鐘只分析頭 10 分鐘，會清楚提示；分析喺背景做（轉 tab 唔會斷、唔會重複分析），可以撳「取消」；萬一再閃退，「設定」會顯示上次閃退紀錄，可以一撳分享。
 - **v0.2.0「晨光」UI 改版**：明亮奶油色 + 日出漸變、圓體字、4 個 tab（今日 / 練習 / 歌曲 / 我的）、新手路線圖、每日目標、今日和弦、暱稱問候、新 icon。核心功能（調音、判定、歌曲分析）同 v0.1.0 一樣。設計說明見 [docs/DESIGN.md](docs/DESIGN.md)。
 - **v0.1.0**（debug build）已完成；Phase 0 數據驗證完成（GuitarSet + 合成尼龍弦），詳見 [validation/REPORT.md](validation/REPORT.md)。
@@ -42,9 +43,9 @@ Android（Kotlin + Jetpack Compose）為主；屋企電腦 server（Python FastA
 APK 唔入 git（約 32 MB 二進制檔）。取得方法二選一：
 
 1. **自己 build**：`cd android && ./gradlew assembleDebug`，APK 喺 `android/app/build/outputs/apk/debug/app-debug.apk`（詳見 [docs/BUILD.md](docs/BUILD.md)）。
-2. **向作者攞** `GuitarTrainer-0.2.1-debug.apk`（最新）。
+2. **向作者攞** `GuitarTrainer-0.2.2-debug.apk`（最新）。
 
-> **由 v0.1.0 升級**：要先刪除舊版（長撳 icon → 解除安裝），因為兩個版本嘅簽名 key 唔同；練習紀錄會清空。v0.2.0 → v0.2.1 之後嘅版本會直接覆蓋更新（紀錄保留）。
+> **由 v0.1.0 升級**：要先刪除舊版（長撳 icon → 解除安裝），因為兩個版本嘅簽名 key 唔同；練習紀錄會清空。v0.2.0 之後嘅版本（v0.2.1、v0.2.2…）會直接覆蓋更新（紀錄保留）。
 
 之後：
 1. 將 APK 轉到手機 → 撳開。

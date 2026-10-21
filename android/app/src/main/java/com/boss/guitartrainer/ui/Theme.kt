@@ -611,7 +611,7 @@ fun levelTone(l: Int) = when (l) { 1 -> Tone.MINT; 2 -> Tone.SUN; else -> Tone.C
 
 /** Friendly rank names for player levels. */
 fun rankName(level: Int) = when (level) {
-    1 -> "結他 BB 🐣"; 2 -> "初心者 🌱"; 3 -> "練習生 🌼"; 4 -> "小樂手 🎶"; 5 -> "結他手 🎸"; 6 -> "台上新星 ⭐"; else -> "結他達人 👑"
+    1 -> "結他 BB 🐣"; 2 -> "初心者 🌱"; 3 -> "練習生 🎵"; 4 -> "小樂手 🎶"; 5 -> "結他手 🎸"; 6 -> "台上新星 ⭐"; else -> "結他達人 👑"
 }
 
 val outlineAccent = BorderStroke(1.5.dp, Palette.Accent)

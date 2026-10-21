@@ -192,7 +192,7 @@ class ScreenshotTest {
     @Test fun results_one_star() = screen { ResultsContent(hist.first(), deltas, emptyList(), true, {}, {}, {}, {}) }
 
     @Test fun settings() { tall(); screen {
-        SettingsContent(AppSettings(nickname = "阿晴"), "UNPROCESSED", false, true, "0.2.0", null, {}, {}, {}, {})
+        SettingsContent(AppSettings(nickname = "阿晴"), "UNPROCESSED", false, true, "0.2.2", null, {}, {}, {}, {})
     } }
     @Test fun settings_crash() = screen {
         SettingsContent(AppSettings(nickname = "阿晴"), "UNPROCESSED", false, true, "0.2.1", null, {}, {}, {}, {},

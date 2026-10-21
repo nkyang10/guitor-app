@@ -102,7 +102,7 @@ private fun ProfileCard(nickname: String, lvl: Int, xp: Int, onEdit: () -> Unit)
     val a = Progression.xpForLevel(lvl); val b = Progression.xpForLevel(lvl + 1)
     Column(Modifier.fillMaxWidth().card(RoundedCornerShape(30.dp), brush = Brushes.Dreamy).padding(18.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(66.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) { Text("🌷", fontSize = 34.sp) }
+            Box(Modifier.size(66.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) { Text("🎧", fontSize = 34.sp) }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(nickname.ifBlank { "結他新手" }, style = MaterialTheme.typography.headlineSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -216,7 +216,7 @@ private fun AchievementsTab(list: List<Achievement>) {
 @Composable
 private fun HistoryTab(hist: List<SessionRecord>, onDelete: (Long) -> Unit) {
     val fmt = SimpleDateFormat("M月d日 HH:mm", Locale.getDefault())
-    if (hist.isEmpty()) SectionCard { EmptyHint("📒", "未有紀錄。完成第一次練習，就會喺度見到 🌼") }
+    if (hist.isEmpty()) SectionCard { EmptyHint("📒", "未有紀錄。完成第一次練習，就會喺度見到 🎶") }
     hist.reversed().take(100).forEach { r ->
         Row(Modifier.fillMaxWidth().card(RoundedCornerShape(22.dp)).padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically) {

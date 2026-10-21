@@ -78,7 +78,7 @@ fun SettingsContent(s: AppSettings, sourceInUse: String, aecActive: Boolean, bas
                     crash: String? = null, onShareCrash: () -> Unit = {}, onClearCrash: () -> Unit = {}) {
     var name by remember { mutableStateOf(s.nickname) }
     var url by remember { mutableStateOf(s.serverUrl) }
-    Screen("設定", onBack, subtitle = "按你鍾意嘅方式練 🌷") {
+    Screen("設定", onBack, subtitle = "按你鍾意嘅方式練 🎶") {
         if (crash != null) SectionCard("上次閃退紀錄", icon = "🧯") {
             val lines = crash.lines()
             fun field(prefix: String) = lines.firstOrNull { it.startsWith(prefix) }?.removePrefix(prefix)?.trim()
@@ -91,7 +91,7 @@ fun SettingsContent(s: AppSettings, sourceInUse: String, aecActive: Boolean, bas
                 GhostButton("清除", onClearCrash, Modifier.weight(1f))
             }
         }
-        SectionCard("關於你", icon = "🌷") {
+        SectionCard("關於你", icon = "🎧") {
             OutlinedTextField(name, { v -> name = v.take(12); onUpdate { it.copy(nickname = name.trim()) } },
                 label = { Text("你嘅名（主頁會同你打招呼）") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp), colors = softFieldColors())
