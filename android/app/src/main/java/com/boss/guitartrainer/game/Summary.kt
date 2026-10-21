@@ -1,5 +1,6 @@
 package com.boss.guitartrainer.game
 
+import com.boss.guitartrainer.data.Days
 import com.boss.guitartrainer.data.SessionRecord
 import kotlin.math.sqrt
 
@@ -83,14 +84,15 @@ data class Achievement(val id: String, val title: String, val desc: String, val 
 
 /** XP / level / achievements derived from history (no extra state needed). */
 object Progression {
-    fun xp(h: List<SessionRecord>) = h.sumOf { (it.accuracy / 10.0 * (1 + it.events / 40.0)).toInt() + 5 }
+    fun xpOf(r: SessionRecord) = (r.accuracy / 10.0 * (1 + r.events / 40.0)).toInt() + 5
+    fun xp(h: List<SessionRecord>) = h.sumOf { xpOf(it) }
     fun level(xp: Int): Int = 1 + kotlin.math.sqrt(xp / 30.0).toInt()
     fun xpForLevel(l: Int) = ((l - 1) * (l - 1)) * 30
 
     fun streakDays(h: List<SessionRecord>): Int {
         if (h.isEmpty()) return 0
-        val days = h.map { it.at / 86_400_000L }.toSortedSet()
-        var d = System.currentTimeMillis() / 86_400_000L
+        val days = h.map { Days.of(it.at) }.toSortedSet()
+        var d = Days.today()
         if (!days.contains(d)) d -= 1
         var n = 0
         while (days.contains(d)) { n++; d-- }
@@ -98,7 +100,7 @@ object Progression {
     }
 
     fun bestStreak(h: List<SessionRecord>): Int {
-        val days = h.map { it.at / 86_400_000L }.toSortedSet().toList()
+        val days = h.map { Days.of(it.at) }.toSortedSet().toList()
         var best = 0; var cur = 0; var prev = Long.MIN_VALUE
         for (d in days) { cur = if (d == prev + 1) cur + 1 else 1; best = maxOf(best, cur); prev = d }
         return best

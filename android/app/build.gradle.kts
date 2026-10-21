@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("app.cash.paparazzi")   // screenshot tests (app/src/test/.../ScreenshotTest.kt)
 }
 
 android {
@@ -13,8 +14,17 @@ android {
         applicationId = "com.boss.guitartrainer"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            // Keep one stable debug key (android/keystore/, not in git) so every new APK installs
+            // over the old one and keeps the user's practice data. Falls back to ~/.android/debug.keystore.
+            val stable = rootProject.file("keystore/debug.keystore")
+            if (stable.exists()) storeFile = stable
+        }
     }
 
     buildTypes {

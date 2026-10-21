@@ -12,13 +12,15 @@
 ```bash
 cd android
 ./gradlew assembleDebug        # APK → app/build/outputs/apk/debug/app-debug.apk
-./gradlew testDebugUnitTest    # 22 個 unit tests
+./gradlew testDebugUnitTest    # 22 個 unit tests + 33 個畫面截圖測試（Paparazzi，唔使手機）
+./gradlew :app:recordPaparazziDebug   # 重新影晒所有畫面 → app/src/test/snapshots/images/（唔入 git）
 ```
 Windows 用 `gradlew.bat`。
 
 ### 裝落手機
 - 將 `app-debug.apk` 傳去手機撳開安裝；或者用 `adb install -r app/build/outputs/apk/debug/app-debug.apk`。
 - 第一次要允許「安裝未知來源 App」。
+- **簽名 key**：有 `android/keystore/debug.keystore` 就用佢（唔入 git，記得備份），冇就用 `~/.android/debug.keystore`。一直用同一條 key，新 APK 先可以直接覆蓋更新、保留練習紀錄；換咗 key 就要先刪舊 App（紀錄會清空）。v0.1.0 → v0.2.0 就係要先刪舊版。
 
 ## 2. 屋企電腦 server（`server/`）
 

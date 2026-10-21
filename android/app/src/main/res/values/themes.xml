@@ -1,7 +1,12 @@
 <resources>
-    <style name="Theme.GuitarTrainer" parent="android:Theme.Material.NoActionBar">
-        <item name="android:statusBarColor">#1E1B16</item>
-        <item name="android:navigationBarColor">#1E1B16</item>
-        <item name="android:windowBackground">#1E1B16</item>
+    <!-- Morning-light theme: cream window, transparent bars with dark icons (Compose draws edge-to-edge). -->
+    <style name="Base.Theme.GuitarTrainer" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#FFF8F1</item>
+        <item name="android:colorBackground">#FFF8F1</item>
+        <item name="android:colorAccent">#FF8A7A</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
+    <style name="Theme.GuitarTrainer" parent="Base.Theme.GuitarTrainer" />
 </resources>

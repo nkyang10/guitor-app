@@ -55,3 +55,4 @@ Task index -> page id (https://app.notion.com/p/<id>):
 49 on-device song analysis 1fb3ff83fb5844d7b572e2e03b30ab3d
 
 ## Done log
+- v0.2.0「晨光」UI/UX redesign (for beginner / girl guitarists, bright-morning feel): new palette + Nunito/Pacifico fonts, 4 tabs (今日/練習/歌曲/我的), beginner roadmap, daily goal + chord of the day + nickname greeting, restyled game lane/tuner/results/stats, custom slider + haptics, adaptive icon, local-day streak fix (Days.kt), 33 Paparazzi screenshot tests. See docs/DESIGN.md.

@@ -27,6 +27,8 @@ data class AppSettings(
     val songExtraOffsetMs: Int = 0,
     val lastProgression: String = "C Am F G",
     val lastBpm: Int = 80,
+    val dailyGoalMin: Int = 10,             // 「今日目標」minutes
+    val nickname: String = "",              // used in the greeting
 )
 
 @Serializable
@@ -112,6 +114,16 @@ class Store private constructor(private val ctx: Context) {
     private val _counters = MutableStateFlow(load("counters.json", counterSer, emptyMap()))
     val counters: StateFlow<Map<String, Int>> = _counters
     fun bump(key: String) { val v = _counters.value + (key to ((_counters.value[key] ?: 0) + 1)); _counters.value = v; save("counters.json", counterSer, v) }
+
+    // ---------------- daily check-ins (key -> local epoch day it was last done), e.g. "tuner", "chord_Am"
+    private val dailySer = MapSerializer(String.serializer(), Long.serializer())
+    private val _daily = MutableStateFlow(load("daily.json", dailySer, emptyMap()))
+    val daily: StateFlow<Map<String, Long>> = _daily
+    @Synchronized fun markToday(key: String) {
+        val d = Days.today()
+        if (_daily.value[key] == d) return
+        val v = _daily.value + (key to d); _daily.value = v; save("daily.json", dailySer, v)
+    }
 
     // ---------------- songs
     val songsDir: File get() = File(dir, "songs").also { it.mkdirs() }

@@ -7,6 +7,12 @@ android/local.properties
 android/captures/
 android/.externalNativeBuild/
 android/.cxx/
+# Paparazzi screenshots (re-generate: ./gradlew :app:recordPaparazziDebug; curated copies live in docs/screenshots/)
+android/app/src/test/snapshots/
+# signing key (keep a backup! same key = APK updates install over the old app without losing data)
+android/keystore/
+*.keystore
+*.jks
 *.iml
 .idea/
 .vscode/

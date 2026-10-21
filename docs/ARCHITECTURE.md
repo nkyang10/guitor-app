@@ -1,6 +1,6 @@
 # 架構
 
-> 版本 v0.1.0。數字來源：[validation/REPORT.md](../validation/REPORT.md)。
+> 版本 v0.2.0（UI 改版；核心模組同 v0.1.0 一樣）。數字來源：[validation/REPORT.md](../validation/REPORT.md)。
 
 ## 1. 總覽
 
@@ -29,8 +29,8 @@
 | `music/` | 樂理、和弦庫、節奏型、Chart | `Chords.kt`、`ChordNames.kt`、`Theory.kt`、`Patterns.kt`、`Chart.kt`、`ChartBuilder.kt` |
 | `analysis/` | 本機歌曲分析 | `AudioDecoder.kt`（MediaCodec）、`SongAnalyzer.kt` |
 | `net/` | 連屋企 server | `ServerApi.kt` |
-| `data/` | 本機儲存（JSON） | `Store.kt` |
-| `ui/` | Compose 畫面 | `TunerScreen.kt`、`PracticeScreen.kt`、`ChordScreens.kt`、`SongScreens.kt`、`GameScreen.kt`、`ResultsScreen.kt`、`CalibrationScreen.kt`、`SettingsScreen.kt` 等 |
+| `data/` | 本機儲存（JSON）、本地日期 / 連續日數 | `Store.kt`、`Days.kt` |
+| `ui/` | Compose 畫面（設計見 [DESIGN.md](DESIGN.md)） | `Theme.kt`（色板 / 字體 / 元件）、`Navigation.kt`（4 個 tab）、`HomeScreen.kt`（今日）、`PracticeHubScreen.kt`（練習）、`StatsScreen.kt`（我的）、`TunerScreen.kt`、`MetronomeScreen.kt`、`PracticeScreen.kt`、`ChordScreens.kt`、`SongScreens.kt`、`GameScreen.kt`、`ResultsScreen.kt`、`CalibrationScreen.kt`、`SettingsScreen.kt` 等 |
 
 ## 3. Server
 
