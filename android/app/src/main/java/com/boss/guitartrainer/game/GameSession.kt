@@ -54,6 +54,12 @@ class GameSession(
     private var lastWaitNanos = 0L
     private var pausedAt = 0.0
     @Volatile var loops = 0; private set
+
+    /**
+     * Song mode only: live shift of the chart against the music (s). + = notes arrive earlier.
+     * 「拍子遲咗」 adds 20 ms,「拍子早咗」 removes 20 ms; GameScreen saves it to the song on finish.
+     */
+    @Volatile var userOffset = 0.0
     val aiChecked get() = verifier?.checked ?: 0
     val aiConfirmed get() = verifier?.confirmed ?: 0
     val aiAvailable get() = verifier?.available == true
@@ -70,9 +76,10 @@ class GameSession(
         if (mode == "song") {
             val p = ExoPlayer.Builder(context).build()
             songAudio?.let { p.setMediaItem(MediaItem.fromUri(Uri.fromFile(it))) }
-            p.playbackParameters = PlaybackParameters(tempo.toFloat())
+            // 升降 Key: Sonic shifts the pitch independently of the practice tempo
+            p.playbackParameters = PlaybackParameters(tempo.toFloat(), Math.pow(2.0, chart.pitchShift / 12.0).toFloat())
             p.prepare()
-            if (from > 0) p.seekTo(((from - chart.audioOffset) * 1000).toLong().coerceAtLeast(0))
+            if (from > 0) p.seekTo(((from - chart.audioOffset - userOffset) * 1000).toLong().coerceAtLeast(0))
             p.play()
             player = p
             playing = true
@@ -133,7 +140,7 @@ class GameSession(
     fun tick(now: Long = System.nanoTime()): Double {
         val p = player
         if (p != null) {
-            posRefSec = p.currentPosition / 1000.0 + chart.audioOffset
+            posRefSec = p.currentPosition / 1000.0 + chart.audioOffset + userOffset
             nanosRef = now
             playing = p.isPlaying
         }
@@ -169,7 +176,7 @@ class GameSession(
         onLoopEnd?.invoke(loops)
         judge.resetRange(lp.start, lp.endInclusive + 1e-3)
         when {
-            mode == "song" -> player?.seekTo(((lp.start - chart.audioOffset) * 1000).toLong().coerceAtLeast(0))
+            mode == "song" -> player?.seekTo(((lp.start - chart.audioOffset - userOffset) * 1000).toLong().coerceAtLeast(0))
             settings.waitMode -> synchronized(this) { waitTime = lp.start - 0.5 }
             else -> { scheduleClicks(lp.start); state = State.COUNT_IN }
         }
@@ -192,7 +199,7 @@ class GameSession(
         val from = maxOf(0.0, pausedAt - 2 * spb)
         judge.resetRange(from, Double.MAX_VALUE)
         when {
-            mode == "song" -> { player?.seekTo(((from - chart.audioOffset) * 1000).toLong().coerceAtLeast(0)); player?.play(); state = State.PLAYING }
+            mode == "song" -> { player?.seekTo(((from - chart.audioOffset - userOffset) * 1000).toLong().coerceAtLeast(0)); player?.play(); state = State.PLAYING }
             settings.waitMode -> { synchronized(this) { waitTime = from; lastWaitNanos = System.nanoTime() }; state = State.PLAYING }
             else -> { scheduleClicks(from); state = State.COUNT_IN }
         }

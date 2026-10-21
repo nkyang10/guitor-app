@@ -87,6 +87,7 @@ object ChartBuilder {
             span.copy(label = shape?.name ?: ChordNames.simplify(fingered, simplifyLevel))
         }
         fun chordAt(t: Double) = spans.firstOrNull { t >= it.start - 0.05 && t < it.end - 0.05 }?.label
+        val period = SongSetup.medianPeriod(beats)
         for ((barIdx, d) in downs.withIndex()) {
             val sectionIdx = base.sections.indexOfFirst { d >= it.start - 0.05 && d < it.end - 0.05 }
             val pid = patternOverride[sectionIdx] ?: base.sections.getOrNull(sectionIdx)?.pattern ?: defaultPattern
@@ -94,30 +95,37 @@ object ChartBuilder {
             val fp = lib.finger(pid)
             val bi = beats.indexOfFirst { kotlin.math.abs(it - d) < 0.03 }.let { if (it < 0) beats.indexOfFirst { b -> b >= d } else it }
             if (bi < 0) continue
-            val stepsPerBeat = sp?.subdivision ?: fp?.subdivision ?: 2
-            val nSteps = sp?.stepsPerBar ?: fp?.stepsPerBar ?: (bpb * 2)
-            val beatsInPattern = sp?.beatsPerBar ?: fp?.beatsPerBar ?: bpb
-            for (s in 0 until nSteps) {
-                val beatPos = s.toDouble() / stepsPerBeat
-                val b0 = bi + beatPos.toInt()
-                if (b0 >= beats.size) break
-                if (beatPos >= beatsInPattern) break
-                val nextBeat = if (b0 + 1 < beats.size) beats[b0 + 1] else beats[b0] + (beats[b0] - beats[(b0 - 1).coerceAtLeast(0)])
-                val t = beats[b0] + (nextBeat - beats[b0]) * (beatPos - beatPos.toInt())
-                val sym = chordAt(t) ?: continue
-                if (sym == "N") continue
-                val shape = ChordLibrary.get(sym) ?: ChordLibrary.forSymbol(sym, true, 1) ?: continue
-                if (sp != null) {
-                    val ch = sp.steps[s]
-                    if (ch == 'D' || ch == 'U' || ch == 'x') events += ChartEvent(t, "strum", shape.name,
-                        if (ch == 'x') "X" else ch.toString(), shape.playedStrings(), shape.midis(tuning, base.capo),
-                        bar = barIdx, beat = beatPos, accent = s == 0)
-                } else if (fp != null) {
-                    val strings = FingerMap.strings(fp.steps[s], shape, tuning)
-                    if (strings.isNotEmpty()) events += ChartEvent(t, "note", shape.name, null, strings,
-                        strings.map { shape.midiOn(it, tuning, base.capo)!! }, strings.map { shape.frets[it] },
-                        fp.steps[s], barIdx, beatPos, s == 0)
+            // a bar ends at the next downbeat: never let a 4-beat pattern spill into the next bar (3/4 songs, short bars)
+            val barEnd = downs.getOrNull(barIdx + 1) ?: (beats[bi] + bpb * period)
+            val stepsPerBeat = (sp?.subdivision ?: fp?.subdivision ?: 2).coerceAtLeast(1)
+            val beatsInPattern = (sp?.beatsPerBar ?: fp?.beatsPerBar ?: bpb).coerceAtLeast(1)
+            var j = 0
+            while (bi + j < beats.size && beats[bi + j] < barEnd - 0.02 && j < 12) {
+                val b0 = bi + j
+                val nextBeat = if (b0 + 1 < beats.size) beats[b0 + 1] else beats[b0] + period
+                val pj = j % beatsInPattern          // pattern shorter than the bar (3/4 pattern in 4/4): repeat from its start
+                for (k in 0 until stepsPerBeat) {
+                    val s = pj * stepsPerBeat + k
+                    val t = beats[b0] + (nextBeat - beats[b0]) * k / stepsPerBeat
+                    if (t >= barEnd - 0.02) break
+                    val beatPos = j + k.toDouble() / stepsPerBeat
+                    val sym = chordAt(t) ?: continue
+                    if (sym == "N") continue
+                    val shape = ChordLibrary.get(sym) ?: ChordLibrary.forSymbol(sym, true, 1) ?: continue
+                    if (sp != null) {
+                        val ch = sp.steps.getOrElse(s) { '-' }
+                        if (ch == 'D' || ch == 'U' || ch == 'x') events += ChartEvent(t, "strum", shape.name,
+                            if (ch == 'x') "X" else ch.toString(), shape.playedStrings(), shape.midis(tuning, base.capo),
+                            bar = barIdx, beat = beatPos, accent = j == 0 && k == 0)
+                    } else if (fp != null) {
+                        val tok = fp.steps.getOrElse(s) { "-" }
+                        val strings = FingerMap.strings(tok, shape, tuning)
+                        if (strings.isNotEmpty()) events += ChartEvent(t, "note", shape.name, null, strings,
+                            strings.map { shape.midiOn(it, tuning, base.capo)!! }, strings.map { shape.frets[it] },
+                            tok, barIdx, beatPos, j == 0 && k == 0)
+                    }
                 }
+                j++
             }
         }
         return base.copy(events = events, chords = spans)

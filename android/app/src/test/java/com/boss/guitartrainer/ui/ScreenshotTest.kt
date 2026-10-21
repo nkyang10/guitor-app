@@ -41,6 +41,9 @@ import com.boss.guitartrainer.music.ChordSpan
 import com.boss.guitartrainer.music.PatternLibrary
 import com.boss.guitartrainer.music.Section
 import com.boss.guitartrainer.music.Tunings
+import com.boss.guitartrainer.music.PatternSuggest
+import com.boss.guitartrainer.music.SongSetup
+import com.boss.guitartrainer.music.SongPrefs
 import com.boss.guitartrainer.net.RemoteSong
 import org.junit.Before
 import org.junit.Rule
@@ -148,14 +151,35 @@ class ScreenshotTest {
         val prog = listOf("C", "G", "Am", "F")
         val spb = 60.0 / 92.0 * 4
         val spans = (0 until 40).map { i -> ChordSpan(i * spb, (i + 1) * spb, prog[i % 4]) }
-        return Chart(id = "s1", title = "小幸運", bpm = 92.0, chords = spans, kind = "song",
+        val beats = (0..160).map { it * 60.0 / 92.0 }
+        return Chart(id = "s1", title = "小幸運", bpm = 92.0, chords = spans, kind = "song", key = "C",
+            beats = beats, downbeats = beats.filterIndexed { i, _ -> i % 4 == 0 },
             sections = listOf(Section(0.0, 8 * spb, "前奏", "s_folk"), Section(8 * spb, 24 * spb, "主歌", "s_folk"), Section(24 * spb, 40 * spb, "副歌", "s_8th")))
     }
-    @Test fun song_detail_partial() = screen {
-        SongDetailContent(songs[1].copy(title = "Hotel California", source = "本機檔案", partial = true), songChart().copy(capo = 2), lib, 1, 0, false,
-            {}, { _, _ -> }, {}, {}) { _, _, _, _, _, _ -> }
+    private fun taller() = paparazzi.unsafeUpdateConfig(DeviceConfig.PIXEL_5.copy(screenHeight = 2340 * 3))
+
+    @Composable private fun songDetail(prefs: SongPrefs, tools: Boolean, entry: SongEntry = songs[0], base: Chart = songChart()) {
+        val chart = SongSetup.effective(base, prefs, null, 1)
+        val sugg = PatternSuggest.suggest(chart, lib, null, prefs.family, 0.0)
+        val aug = PatternSuggest.augment(lib, sugg.allIds() + prefs.overrides.values)
+        SongDetailContent(entry, chart, base.key, prefs, aug, sugg, 1, 0, false, {}, {}, { _, _, _, _ -> }, {}, {},
+            beatCard = {
+                BeatCard(bpm = 92.0, bpb = 4, offsetMs = prefs.offsetMs, custom = tools, analysing = if (tools) null else 0.42f, envReady = tools,
+                    error = null, message = if (tools) "👆 拍子太慢 → 改做 92 BPM" else null, canUndo = tools, playing = tools, beatNo = 1,
+                    pulse = 0.8f, taps = if (tools) 7 else 0, expanded = tools, hasAudio = true, onExpand = {}, onPlay = {}, onSkip = {},
+                    onTap = {}, onTapApply = {}, onTapClear = {}, onOp = {}, onUndo = {})
+            }) { _, _, _, _, _ -> }
     }
-    @Test fun song_detail() { tall(); screen { SongDetailContent(songs[0], songChart(), lib, 1, 0, false, {}, { _, _ -> }, {}, {}) { _, _, _, _, _, _ -> } } }
+    @Test fun song_detail_partial() = screen {
+        songDetail(SongPrefs(), tools = false, entry = songs[1].copy(title = "Hotel California", source = "本機檔案", partial = true),
+            base = songChart().copy(capo = 2))
+    }
+    @Test fun song_detail() { taller(); screen { songDetail(SongPrefs(), tools = false) } }
+    @Test fun song_detail_tools() { taller(); screen { songDetail(SongPrefs(transpose = 2, pitchFollow = true, level = "advanced",
+        overrides = mapOf(2 to "s_rumba"), offsetMs = 20), tools = true) } }
+    @Test fun song_chord_edit() = screen {
+        ChordEditDialog(ChordSpan(0.0, 2.0, "G"), 2, 6, {}) { _, _ -> }
+    }
 
     private fun tunerUi(cents: Double?, note: String?, tuned: Set<Int>) = TunerUi(Tunings.ALL.map { it.id to it.name }, "std", Tunings.STANDARD.name,
         note, note?.let { 110.4 }, cents, if (note != null) 1 else null, -1, Tunings.STANDARD.midis.indices.map { Tunings.STANDARD.stringName(it) },
@@ -222,6 +246,12 @@ class ScreenshotTest {
     @Test fun game_count_in() = screen {
         val chart = ChartBuilder.strumPractice("掃弦：民謠基本", listOf("C", "Am", "F", "G"), lib.strum.first(), 80.0, 8)
         GameContent(chart, graded(chart, -1.4), -1.4, 1.0, "strum", GameHud("掃弦：民謠基本", "80 BPM · 初學", 100.0, 0, 0f, 0.2f, countIn = 2), {}, {}, {})
+    }
+    @Test fun game_song() = screen {
+        val chart = ChartBuilder.song(songChart(), lib, "s_folk", 1)
+        GameContent(chart, graded(chart, 7.0), 7.0, 0.8, "song",
+            GameHud("小幸運", "74 BPM · 初學", 88.0, 9, 0.3f, 0.5f, feedback = Feedback("Perfect!", Feedback.Kind.PERFECT, 1), feedbackAgeMs = 200),
+            {}, {}, {}, nudgeMs = -20)
     }
     @Test fun game_finger() = screen {
         val chart = ChartBuilder.fingerPractice("指彈：p-i-m-a", listOf("C", "G", "Am", "F"), lib.finger.first(), 70.0, 8)

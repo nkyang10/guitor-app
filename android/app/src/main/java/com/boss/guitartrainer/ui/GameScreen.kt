@@ -69,6 +69,7 @@ import com.boss.guitartrainer.game.Grade
 import com.boss.guitartrainer.game.Progression
 import com.boss.guitartrainer.game.SessionSummary
 import com.boss.guitartrainer.music.Chart
+import com.boss.guitartrainer.music.SongSetup
 import com.boss.guitartrainer.music.ChartEvent
 import com.boss.guitartrainer.music.ChordLibrary
 import kotlin.math.ceil
@@ -91,10 +92,12 @@ fun GameScreen(nav: NavController) {
     var req by remember { mutableStateOf(req0) }
     var sessionKey by remember { mutableIntStateOf(0) }
     val settings = store.settings.value
+    var nudgeMs by remember { mutableIntStateOf(0) }       // song mode「拍子早咗／遲咗」, saved to the song on finish
     val session = remember(sessionKey) {
         GameSession(ctx, req.chart, req.settings, store.calibration.value, req.mode, req.audio,
             extraOffsetMs = req.extraOffsetMs + if (req.mode == "song") settings.songExtraOffsetMs else 0,
             useAi = settings.useBasicPitch, micSource = settings.micSource, loop = req.loop, metronomeVolume = settings.metronomeVolume)
+            .also { it.userOffset = nudgeMs / 1000.0 }
     }
     var t by remember { mutableDoubleStateOf(-10.0) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -122,7 +125,12 @@ fun GameScreen(nav: NavController) {
         }
         val after = Progression.achievements(store.history.value, store.counters.value)
         val newOnes = after.filter { it.unlocked && it.id !in before }
-        AppState.lastResult = ResultPayload(rec, session.judge.results.mapNotNull { it.deltaMs }, newOnes, req)
+        var out = req
+        if (req.mode == "song" && nudgeMs != 0) {
+            req.songId?.let { id -> SongSetup.nudge(store.songDir(id), nudgeMs) }
+            out = req.copy(chart = req.chart.copy(audioOffset = req.chart.audioOffset + nudgeMs / 1000.0))
+        }
+        AppState.lastResult = ResultPayload(rec, session.judge.results.mapNotNull { it.deltaMs }, newOnes, out)
         nav.navigate("results") { popUpTo("game") { inclusive = true } }
     }
 
@@ -166,7 +174,9 @@ fun GameScreen(nav: NavController) {
     )
     GameContent(chart, judge.results, t, req.settings.tempoFactor, req.mode, hud,
         onPause = { if (paused) { session.resume(); paused = false } else { session.pause(); paused = true } },
-        onLoop = { showLoop = true }, onFinish = { finish() })
+        onLoop = { showLoop = true }, onFinish = { finish() },
+        nudgeMs = if (req.mode == "song") nudgeMs else null,
+        onNudge = { d -> nudgeMs = (nudgeMs + d).coerceIn(-400, 400); session.userOffset = nudgeMs / 1000.0 })
 
     if (showLoop) {
         val n = barCount(chart)
@@ -209,7 +219,8 @@ data class GameHud(
 
 @Composable
 fun GameContent(chart: Chart, results: Array<EventResult>, t: Double, tempo: Double, mode: String, h: GameHud,
-                onPause: () -> Unit, onLoop: () -> Unit, onFinish: () -> Unit) {
+                onPause: () -> Unit, onLoop: () -> Unit, onFinish: () -> Unit,
+                nudgeMs: Int? = null, onNudge: (Int) -> Unit = {}) {
     val isTab = remember(chart, mode) { mode == "finger" || chart.events.any { it.type == "note" } }
     Column(Modifier.fillMaxSize().background(Palette.Bg).padding(horizontal = 12.dp, vertical = 8.dp)) {
         // ---------------- HUD
@@ -239,19 +250,25 @@ fun GameContent(chart: Chart, results: Array<EventResult>, t: Double, tempo: Dou
         // ---------------- current / next chord
         val cur = chart.chords.lastOrNull { it.start <= t + 0.05 }
         val next = chart.chords.firstOrNull { it.start > t + 0.05 }
-        Row(Modifier.fillMaxWidth().height(116.dp).card(RoundedCornerShape(24.dp)).padding(horizontal = 14.dp, vertical = 8.dp),
+        // big enough to read at arm's length on a music stand (64 sp for short names)
+        Row(Modifier.fillMaxWidth().height(152.dp).card(RoundedCornerShape(24.dp)).padding(horizontal = 14.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(cur?.label ?: "—", style = MaterialTheme.typography.displaySmall, color = Palette.Accent, maxLines = 1)
-                if (next != null) Text("下一個：${next.label} · ${"%.1f".format((next.start - t) / tempo)}s",
-                    style = MaterialTheme.typography.labelMedium, color = Palette.Muted, maxLines = 1)
+                val label = cur?.label ?: "—"
+                Text(label, style = MaterialTheme.typography.displayLarge, fontSize = chordFontSize(label), lineHeight = chordFontSize(label),
+                    color = Palette.Accent, maxLines = 1, softWrap = false, overflow = TextOverflow.Clip)
+                if (next != null) Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("下一個 ", style = MaterialTheme.typography.labelLarge, color = Palette.Muted, maxLines = 1)
+                    Text(next.label, style = MaterialTheme.typography.headlineSmall, color = Palette.Accent2, maxLines = 1)
+                    Text(" · ${"%.1f".format((next.start - t) / tempo)}s", style = MaterialTheme.typography.labelLarge, color = Palette.Muted, maxLines = 1)
+                }
                 val sec = chart.sections.lastOrNull { it.start <= t + 0.05 }
                 if (sec != null) Text("段落：${sec.label}", style = MaterialTheme.typography.labelSmall, color = Palette.Muted, maxLines = 1)
             }
-            cur?.label?.let { ChordLibrary.get(it) }?.let { ChordDiagram(it, Modifier.height(100.dp)) }
+            cur?.label?.let { ChordLibrary.get(it) }?.let { ChordDiagram(it, Modifier.height(128.dp)) }
             Spacer(Modifier.width(8.dp))
             next?.label?.let { ChordLibrary.get(it) }?.let {
-                Box(Modifier.alpha(0.55f)) { ChordDiagram(it, Modifier.height(72.dp), showFingers = false, color = Palette.Muted) }
+                Box(Modifier.alpha(0.6f)) { ChordDiagram(it, Modifier.height(88.dp), showFingers = false, color = Palette.Muted) }
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -298,6 +315,17 @@ fun GameContent(chart: Chart, results: Array<EventResult>, t: Double, tempo: Dou
         }
         Spacer(Modifier.height(8.dp))
 
+        // ---------------- song mode: arrows vs music
+        if (nudgeMs != null) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                SoftButton("拍子早咗", { onNudge(-20) }, Modifier.weight(1f), tone = Tone.SKY, emoji = "⏪", height = 40.dp)
+                Text(when { nudgeMs > 0 -> "譜提早 ${nudgeMs}ms"; nudgeMs < 0 -> "譜推遲 ${-nudgeMs}ms"; else -> "對拍 ±0" },
+                    style = MaterialTheme.typography.labelMedium, color = Palette.Muted, maxLines = 1)
+                SoftButton("拍子遲咗", { onNudge(20) }, Modifier.weight(1f), tone = Tone.PEACH, emoji = "⏩", height = 40.dp)
+            }
+            Spacer(Modifier.height(6.dp))
+        }
+
         // ---------------- controls
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             GhostButton(if (h.paused) "繼續" else "暫停", onPause, Modifier.weight(1f), emoji = if (h.paused) "▶️" else "⏸️")
@@ -343,10 +371,17 @@ private fun dirColor(dir: String?): Color = when (dir) { "D" -> Palette.Accent; 
 /** Space reserved at the top of the lane card for the feedback / loop chips (Compose overlays). */
 private val OverlayStrip = 46.dp
 
+/** Current-chord size: as big as fits next to the diagrams. */
+internal fun chordFontSize(label: String) = when {
+    label.length <= 3 -> 64.sp
+    label.length == 4 -> 54.sp
+    else -> 42.sp
+}
+
 /** Chord name pills above the lane; the current chord's pill sticks to the left edge until the next one arrives. */
 private fun DrawScope.drawChordPills(chart: Chart, t: Double, hitX: Float, pxPerSec: Float, t0: Double, t1: Double, top: Float) {
-    val padX = 10.dp.toPx(); val ph = 28.dp.toPx(); val edge = 10.dp.toPx()
-    textPaint.textSize = 15.sp.toPx(); textPaint.textAlign = Paint.Align.LEFT
+    val padX = 12.dp.toPx(); val ph = 36.dp.toPx(); val edge = 10.dp.toPx()
+    textPaint.textSize = 20.sp.toPx(); textPaint.textAlign = Paint.Align.LEFT
     val spans = chart.chords
     for ((k, c) in spans.withIndex()) {
         if (c.end < t0 || c.start > t1) continue
@@ -378,7 +413,7 @@ private fun DrawScope.drawLane(chart: Chart, results: Array<EventResult>, t: Dou
     val pxPerSec = (w * 0.27f / tempo).toFloat()     // ~3 s visible at normal speed
     val inset = 8.dp.toPx()
     val pillTop = OverlayStrip.toPx()
-    val laneTop = pillTop + 40.dp.toPx(); val laneBot = h - 50.dp.toPx(); val cy = (laneTop + laneBot) / 2
+    val laneTop = pillTop + 48.dp.toPx(); val laneBot = h - 50.dp.toPx(); val cy = (laneTop + laneBot) / 2
     drawRoundRect(Palette.Bg, Offset(inset, laneTop), androidx.compose.ui.geometry.Size(w - inset * 2, laneBot - laneTop),
         androidx.compose.ui.geometry.CornerRadius(20.dp.toPx()))
     val spb = 60.0 / chart.bpm
@@ -471,9 +506,11 @@ private fun DrawScope.drawTab(chart: Chart, results: Array<EventResult>, t: Doub
     val spb = 60.0 / chart.bpm
     val t0 = t - hitX / pxPerSec; val t1 = t + (w - hitX) / pxPerSec
     val bpb = chart.beatsPerBar
-    for (b in floor(t0 / spb).toInt()..ceil(t1 / spb).toInt()) {
-        if (b % bpb != 0) continue
-        val x = hitX + ((b * spb - t) * pxPerSec).toFloat()
+    // bar lines on the song's real downbeats (a constant-BPM grid drifts away from the music)
+    val bars: List<Double> = if (chart.downbeats.isNotEmpty()) chart.downbeats.filter { it in t0..t1 }
+        else (floor(t0 / spb).toInt()..ceil(t1 / spb).toInt()).filter { it % bpb == 0 }.map { it * spb }
+    for (b in bars) {
+        val x = hitX + ((b - t) * pxPerSec).toFloat()
         drawLine(Palette.Grid.copy(alpha = 0.6f), Offset(x, top), Offset(x, bot), strokeWidth = 1.5.dp.toPx())
     }
     drawChordPills(chart, t, hitX, pxPerSec, t0, t1, pillTop)

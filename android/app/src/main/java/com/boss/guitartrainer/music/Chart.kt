@@ -41,6 +41,7 @@ data class Chart(
     val audioOffset: Double = 0.0,               // seconds: shift between audio and chart
     val kind: String = "practice",              // practice | song
     val patternId: String? = null,
+    val pitchShift: Int = 0,                     // semitones the song audio is pitch-shifted (升降 Key); 0 = original
 ) {
     val duration get() = (events.lastOrNull()?.t ?: 0.0) + 60.0 / bpm * beatsPerBar
 
