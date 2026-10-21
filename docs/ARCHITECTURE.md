@@ -24,12 +24,12 @@
 | Package | 責任 | 主要檔案 |
 |---|---|---|
 | `audio/` | 麥克風 / 喇叭引擎、節拍機、即時分析 | `AudioEngine.kt`（UNPROCESSED 優先，唔支援就用 VOICE_RECOGNITION）、`MicSession.kt`、`AudioRing.kt`、`ClickTrack.kt`、`LiveAnalyzer.kt` |
-| `dsp/` | 音高、onset、和弦 chroma、掃弦方向、Basic Pitch | `Pitch.kt`（MPM）、`OnsetDetector.kt`、`ChordAnalyzer.kt`、`DirectionModel.kt`、`BasicPitch.kt`（TFLite）、`Fft.kt` |
+| `dsp/` | 音高、onset、和弦 chroma、掃弦方向、Basic Pitch、resample | `Pitch.kt`（MPM）、`OnsetDetector.kt`、`ChordAnalyzer.kt`、`DirectionModel.kt`、`BasicPitch.kt`（TFLite）、`Fft.kt`、`StreamResampler.kt` |
 | `game/` | 判定、難度、遊戲 session、校準、成績 | `Judge.kt`、`Difficulty.kt`、`GameSession.kt`、`NoteVerifier.kt`、`Calibrator.kt`、`Summary.kt` |
 | `music/` | 樂理、和弦庫、節奏型、Chart | `Chords.kt`、`ChordNames.kt`、`Theory.kt`、`Patterns.kt`、`Chart.kt`、`ChartBuilder.kt` |
-| `analysis/` | 本機歌曲分析 | `AudioDecoder.kt`（MediaCodec）、`SongAnalyzer.kt` |
+| `analysis/` | 本機歌曲分析 | `AudioDecoder.kt`（MediaCodec，串流解碼）、`Pcm.kt`（PCM → mono）、`SongAnalyzer.kt` |
 | `net/` | 連屋企 server | `ServerApi.kt` |
-| `data/` | 本機儲存（JSON）、本地日期 / 連續日數 | `Store.kt`、`Days.kt` |
+| `data/` | 本機儲存（JSON）、本地日期 / 連續日數、加歌 job、閃退紀錄 | `Store.kt`、`Days.kt`、`SongImporter.kt`、`CrashLog.kt` |
 | `ui/` | Compose 畫面（設計見 [DESIGN.md](DESIGN.md)） | `Theme.kt`（色板 / 字體 / 元件）、`Navigation.kt`（4 個 tab）、`HomeScreen.kt`（今日）、`PracticeHubScreen.kt`（練習）、`StatsScreen.kt`（我的）、`TunerScreen.kt`、`MetronomeScreen.kt`、`PracticeScreen.kt`、`ChordScreens.kt`、`SongScreens.kt`、`GameScreen.kt`、`ResultsScreen.kt`、`CalibrationScreen.kt`、`SettingsScreen.kt` 等 |
 
 ## 3. Server
@@ -56,6 +56,10 @@
 
 ### 4.2 本機歌曲分析（手機）
 音檔（`AudioDecoder`，MediaCodec）→ `SongAnalyzer`：tempo（metrical autocorrelation）→ beat-sync chroma + bass → 和弦（maj / min / 7 / m7 + Viterbi）→ key → capo → 分段 → `Chart`。
+
+記憶體（v0.2.1）：`AudioDecoder` 每個 decoder block 即刻 downmix（`Pcm`）+ 串流 resample（`StreamResampler`，同舊 batch 版同一個 windowed-sinc kernel，預計好 phase table，快 ~20 倍）到 22.05 kHz，只保留結果（`FloatBuf`，按長度預先開好，唔使 copy）。實測：4 分鐘 44.1 kHz 歌 peak heap ~34 MB、10 分鐘 48 kHz ~64 MB（舊版 4 分鐘已經要 ~130 MB，10 分鐘 256 MB heap 都 OOM）。
+`SongImporter`（app scope，一次一個 job）負責複製檔案 → 解碼 → 分析 → 儲存，畫面只係睇 `state`；轉 tab / 轉方向唔會斷，亦唔會同時跑兩個分析；可以取消；失敗會刪走複製咗嘅檔。
+限制：最長 10 分鐘（之後嘅部分唔分析，`SongEntry.partial` → 歌曲頁有提示）、檔案 ≤ 300 MB、最短 10 秒、聽唔到和弦會拒絕。`CrashLog` 將上次閃退（stack trace + heap 數字 + 當時做緊乜）存喺 `files/crash_last.txt`，設定頁可以分享。
 
 ### 4.3 Server 分析
 YouTube link / 上傳 → yt-dlp 下載 → ffmpeg 解碼 →（可選）Demucs `htdemucs_6s` 分離 → `analysis.py` → `chart.json` + `mix.m4a` + `no_guitar.m4a` → 手機 `ServerApi` 拎返 cache。
@@ -84,4 +88,5 @@ YouTube link / 上傳 → yt-dlp 下載 → ffmpeg 解碼 →（可選）Demucs 
 - 掃弦方向：通用模型 balanced accuracy 74.6%，個人校準後 75.5%，所以用 gate 0.75 先判定。
 - 驗證數據係 GuitarSet（鋼弦）+ 合成尼龍弦；**未有真實尼龍弦 + 手機錄音**，要靠 App 內嘅校準同測試畫面補。
 - 歌曲分析未試過真 YouTube 歌。
+- 手機本機分析：最長 10 分鐘（長歌只分析頭 10 分鐘）、檔案 300 MB 以下、冇分離音軌；PC server 最長 15 分鐘。
 - 和弦門檻、掃弦 gate 要用 1 星期實測（trial log）再調。

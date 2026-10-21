@@ -12,7 +12,8 @@
 ```bash
 cd android
 ./gradlew assembleDebug        # APK → app/build/outputs/apk/debug/app-debug.apk
-./gradlew testDebugUnitTest    # 22 個 unit tests + 33 個畫面截圖測試（Paparazzi，唔使手機）
+./gradlew testDebugUnitTest    # 34 個 unit tests + 37 個畫面截圖測試（Paparazzi，唔使手機）
+                               # DecodeMemoryTest 會開一個 -Xmx128m 嘅 JVM，模擬 10 分鐘 48 kHz 立體聲歌由解碼到分析（~15 秒）
 ./gradlew :app:recordPaparazziDebug   # 重新影晒所有畫面 → app/src/test/snapshots/images/（唔入 git）
 ```
 Windows 用 `gradlew.bat`。

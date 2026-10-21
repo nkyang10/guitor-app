@@ -1,5 +1,8 @@
 package com.boss.guitartrainer.ui
 
+import android.content.Context
+import android.content.Intent
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,11 +22,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.boss.guitartrainer.audio.AudioEngine
 import com.boss.guitartrainer.data.AppSettings
+import com.boss.guitartrainer.data.CrashLog
 import com.boss.guitartrainer.data.Store
 import com.boss.guitartrainer.dsp.BasicPitch
 import com.boss.guitartrainer.net.ServerApi
@@ -40,6 +45,7 @@ fun SettingsScreen(nav: NavController) {
     val scope = rememberCoroutineScope()
     val eng = AudioEngine.get(ctx)
     val version = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull() ?: "" }
+    var crash by remember { mutableStateOf(CrashLog.read(ctx)) }
     SettingsContent(s, eng.sourceInUse, eng.aecActive, BasicPitch.available(ctx), version, test,
         onUpdate = { f -> store.updateSettings(f) },
         onTest = { url ->
@@ -51,15 +57,40 @@ fun SettingsScreen(nav: NavController) {
                 }
             }
         },
-        onCalibrate = { nav.navigate("calibration") }, onBack = { nav.popBackStack() })
+        onCalibrate = { nav.navigate("calibration") }, onBack = { nav.popBackStack() },
+        crash = crash,
+        onShareCrash = { crash?.let { shareCrash(ctx, it) } },
+        onClearCrash = { CrashLog.clear(ctx); crash = null })
+}
+
+private fun shareCrash(ctx: Context, text: String) {
+    val send = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_SUBJECT, "結他練習 App 閃退紀錄")
+        putExtra(Intent.EXTRA_TEXT, text)
+    }
+    runCatching { ctx.startActivity(Intent.createChooser(send, "分享閃退紀錄")) }
 }
 
 @Composable
 fun SettingsContent(s: AppSettings, sourceInUse: String, aecActive: Boolean, basicPitch: Boolean, version: String, test: String?,
-                    onUpdate: ((AppSettings) -> AppSettings) -> Unit, onTest: (String) -> Unit, onCalibrate: () -> Unit, onBack: () -> Unit) {
+                    onUpdate: ((AppSettings) -> AppSettings) -> Unit, onTest: (String) -> Unit, onCalibrate: () -> Unit, onBack: () -> Unit,
+                    crash: String? = null, onShareCrash: () -> Unit = {}, onClearCrash: () -> Unit = {}) {
     var name by remember { mutableStateOf(s.nickname) }
     var url by remember { mutableStateOf(s.serverUrl) }
     Screen("設定", onBack, subtitle = "按你鍾意嘅方式練 🌷") {
+        if (crash != null) SectionCard("上次閃退紀錄", icon = "🧯") {
+            val lines = crash.lines()
+            fun field(prefix: String) = lines.firstOrNull { it.startsWith(prefix) }?.removePrefix(prefix)?.trim()
+            field("時間：")?.let { Text("時間：$it", style = MaterialTheme.typography.bodyMedium) }
+            field("當時：")?.let { Text("當時：$it", style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+            field("錯誤：")?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Palette.Miss, maxLines = 3, overflow = TextOverflow.Ellipsis) }
+            Hint("撳「分享」將紀錄傳俾開發者（WhatsApp／電郵都得），方便搵出原因。")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SoftButton("分享", onShareCrash, Modifier.weight(1f), Tone.ROSE, emoji = "📤")
+                GhostButton("清除", onClearCrash, Modifier.weight(1f))
+            }
+        }
         SectionCard("關於你", icon = "🌷") {
             OutlinedTextField(name, { v -> name = v.take(12); onUpdate { it.copy(nickname = name.trim()) } },
                 label = { Text("你嘅名（主頁會同你打招呼）") }, singleLine = true, modifier = Modifier.fillMaxWidth(),

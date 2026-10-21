@@ -32,12 +32,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,9 +44,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.boss.guitartrainer.analysis.AudioDecoder
-import com.boss.guitartrainer.analysis.SongAnalyzer
 import com.boss.guitartrainer.data.SongEntry
+import com.boss.guitartrainer.data.SongImporter
 import com.boss.guitartrainer.data.Store
 import com.boss.guitartrainer.music.Chart
 import com.boss.guitartrainer.music.ChartBuilder
@@ -57,10 +54,7 @@ import com.boss.guitartrainer.music.Tunings
 import com.boss.guitartrainer.net.RemoteSong
 import com.boss.guitartrainer.net.ServerApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 
 @Composable
 fun SongsScreen(nav: NavController) {
@@ -69,16 +63,15 @@ fun SongsScreen(nav: NavController) {
     val settings by store.settings.collectAsState()
     val songs by store.songs.collectAsState()
     val shared by AppState.sharedLink.collectAsState()
+    // the import job lives in SongImporter (app scope): switching tabs keeps it running and shows it again on return
+    val imp by SongImporter.state.collectAsState()
     var link by remember { mutableStateOf("") }
-    var status by remember { mutableStateOf<String?>(null) }
-    var busy by remember { mutableStateOf(false) }
-    var prog by remember { mutableDoubleStateOf(0.0) }
     var server by remember { mutableStateOf<String?>(null) }
     var remote by remember { mutableStateOf<List<RemoteSong>>(emptyList()) }
     var separate by remember { mutableStateOf(true) }
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(shared) { shared?.let { link = it; AppState.sharedLink.value = null } }
+    LaunchedEffect(Unit) { SongImporter.urlDone.collect { if (link.trim() == it) link = "" } }
     LaunchedEffect(settings.serverUrl) {
         server = "檢查緊…"
         server = withContext(Dispatchers.IO) {
@@ -86,72 +79,25 @@ fun SongsScreen(nav: NavController) {
                 { h -> if (h.ok) "✓ 已連線（v${h.version}${if (h.demucs) "，有 Demucs 分離" else "，冇 Demucs"}）" else "✗ 伺服器回應異常" },
                 { "✗ 連唔到 ${settings.serverUrl}" })
         }
-        if (server?.startsWith("✓") == true) remote = withContext(Dispatchers.IO) { runCatching { ServerApi(settings.serverUrl).songs() }.getOrDefault(emptyList()) }
     }
-
-    suspend fun importRemote(api: ServerApi, songId: String, source: String?) {
-        status = "下載譜同音訊…"
-        val chartText = withContext(Dispatchers.IO) { api.chart(songId) }
-        val chart = Chart.parse(chartText)
-        store.saveSongChart(songId, chart.copy(id = songId), edited = false)
-        val dir = store.songDir(songId)
-        withContext(Dispatchers.IO) { api.download(songId, "mix", File(dir, "mix.m4a")) { prog = it * 0.7 } }
-        val hasNg = withContext(Dispatchers.IO) { runCatching { api.download(songId, "no_guitar", File(dir, "no_guitar.m4a")) { prog = 0.7 + it * 0.3 } }.getOrDefault(false) }
-        store.upsertSong(SongEntry(songId, chart.title, source ?: chart.source, System.currentTimeMillis(), chart.bpm, chart.key, hasNg))
+    // server song list: when connected, and again after each finished job
+    LaunchedEffect(server, imp.busy) {
+        if (server?.startsWith("✓") == true && !imp.busy)
+            remote = withContext(Dispatchers.IO) { runCatching { ServerApi(settings.serverUrl).songs() }.getOrDefault(remote) }
     }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        busy = true; status = "讀取檔案…"; prog = 0.0
-        scope.launch {
-            try {
-                val id = "local-" + System.currentTimeMillis()
-                val dir = store.songDir(id)
-                val name = uri.lastPathSegment?.substringAfterLast('/')?.substringBeforeLast('.') ?: "本機歌曲"
-                val ext = ctx.contentResolver.getType(uri)?.substringAfter('/')?.let { if (it == "mpeg") "mp3" else it } ?: "m4a"
-                val f = File(dir, "mix.$ext")
-                withContext(Dispatchers.IO) { ctx.contentResolver.openInputStream(uri)!!.use { i -> f.outputStream().use { o -> i.copyTo(o) } } }
-                status = "解碼…"
-                val x = withContext(Dispatchers.Default) { AudioDecoder.decodeMono(f) { prog = it * 0.3 } }
-                status = "分析節拍同和弦（手機版，冇分離音軌）…"
-                val chart = withContext(Dispatchers.Default) { SongAnalyzer.analyze(x, name, uri.toString(), 1) { prog = 0.3 + it * 0.7 } }
-                store.saveSongChart(id, chart.copy(id = id), edited = false)
-                store.upsertSong(SongEntry(id, name, "本機檔案", System.currentTimeMillis(), chart.bpm, chart.key, false, local = true))
-                status = "✓ 完成：$name（%.0f BPM，%s 調%s）".format(chart.bpm, chart.key, if (chart.capo > 0) "，建議 Capo ${chart.capo}" else "")
-            } catch (e: Exception) { status = "✗ 分析失敗：${e.message}" }
-            busy = false
-        }
+        if (uri != null) SongImporter.importLocal(ctx, uri)
     }
-
+    val level = if (settings.difficulty.preset == "beginner") 1 else 2
     val notLocal = remote.filter { r -> songs.none { it.id == r.id } }
-    SongsContent(server, link, { link = it }, separate, { separate = it }, busy, prog, status, songs, notLocal,
-        onAnalyze = {
-            busy = true; status = "送出分析…"; prog = 0.0
-            scope.launch {
-                try {
-                    val api = ServerApi(settings.serverUrl)
-                    val job = withContext(Dispatchers.IO) { api.analyze(link.trim(), separate, if (settings.difficulty.preset == "beginner") 1 else 2) }
-                    while (true) {
-                        val st = withContext(Dispatchers.IO) { api.job(job) }
-                        prog = st.progress; status = st.message.ifBlank { st.status }
-                        if (st.status == "done" && st.song_id != null) { importRemote(api, st.song_id, link.trim()); status = "✓ 完成"; link = ""; break }
-                        if (st.status == "error") { status = "✗ ${st.error ?: st.message}"; break }
-                        delay(1500)
-                    }
-                } catch (e: Exception) { status = "✗ ${e.message}（檢查伺服器地址／同一 Wi-Fi／Tailscale）" }
-                busy = false
-            }
-        },
+    SongsContent(server, link, { link = it }, separate, { separate = it }, imp.busy, imp.progress, imp.status, songs, notLocal,
+        onAnalyze = { SongImporter.analyzeUrl(ctx, settings.serverUrl, link.trim(), separate, level) },
         onPick = { picker.launch(arrayOf("audio/*")) },
         onOpen = { nav.navigate("song/${Uri.encode(it)}") },
-        onDownload = { r ->
-            busy = true
-            scope.launch {
-                try { importRemote(ServerApi(settings.serverUrl), r.id, r.source); status = "✓ 已下載 ${r.title}" } catch (e: Exception) { status = "✗ ${e.message}" }
-                busy = false
-            }
-        },
-        onSettings = { nav.navigate("settings") })
+        onDownload = { r -> SongImporter.downloadRemote(ctx, settings.serverUrl, r) },
+        onSettings = { nav.navigate("settings") },
+        onCancel = { SongImporter.cancel() })
 }
 
 fun songTone(title: String): Tone = Tone.entries[Math.floorMod(title.hashCode(), Tone.entries.size)]
@@ -159,7 +105,7 @@ fun songTone(title: String): Tone = Tone.entries[Math.floorMod(title.hashCode(),
 @Composable
 fun SongsContent(server: String?, link: String, onLink: (String) -> Unit, separate: Boolean, onSeparate: (Boolean) -> Unit, busy: Boolean,
                  prog: Double, status: String?, songs: List<SongEntry>, remote: List<RemoteSong>, onAnalyze: () -> Unit, onPick: () -> Unit,
-                 onOpen: (String) -> Unit, onDownload: (RemoteSong) -> Unit, onSettings: () -> Unit) {
+                 onOpen: (String) -> Unit, onDownload: (RemoteSong) -> Unit, onSettings: () -> Unit, onCancel: () -> Unit = {}) {
     val ok = server?.startsWith("✓") == true
     Screen("歌曲", null, subtitle = "跟住真歌彈，最開心 🎶", actions = { TopAction("⚙️", "設定", onSettings) }) {
         Row(Modifier.clip(CircleShape).background(if (ok) Palette.MintSoft else Palette.Surface).padding(horizontal = 12.dp, vertical = 7.dp),
@@ -184,10 +130,17 @@ fun SongsContent(server: String?, link: String, onLink: (String) -> Unit, separa
             Toggle("分離結他音軌（Demucs，較慢）", separate, onSeparate)
             PillButton("用 PC 分析", onAnalyze, Modifier.fillMaxWidth(), enabled = !busy && link.startsWith("http"), emoji = "🪄")
             GhostButton("揀手機入面嘅音樂檔（離線分析）", onPick, Modifier.fillMaxWidth(), enabled = !busy, emoji = "📁")
-            if (busy) LevelBar(prog.toFloat(), color = Palette.Mint)
+            if (busy) Row(verticalAlignment = Alignment.CenterVertically) {
+                LevelBar(prog.toFloat(), Modifier.weight(1f), color = Palette.Mint)
+                Spacer(Modifier.width(10.dp))
+                Text("%.0f%%".format(prog * 100), style = MaterialTheme.typography.labelMedium, color = Palette.Muted)
+                Spacer(Modifier.width(8.dp))
+                GhostButton("取消", onCancel, height = 40.dp)
+            }
             status?.let { Text(it, color = if (it.startsWith("✗")) Palette.Miss else if (it.startsWith("✓")) Palette.MintDeep else Palette.Text,
                 style = MaterialTheme.typography.bodyMedium) }
-            Hint("提示：喺 YouTube App 撳「分享 → 結他練習」都可以直接貼連結。只供個人練習用。")
+            Hint("手機離線分析最長 10 分鐘（檔案 300 MB 以下），長啲嘅歌只會分析頭 10 分鐘。\n" +
+                "提示：喺 YouTube App 撳「分享 → 結他練習」都可以直接貼連結。只供個人練習用。")
         }
         if (remote.isNotEmpty()) {
             SectionTitle("伺服器上已分析（未下載）", "☁️")
@@ -265,6 +218,7 @@ fun SongDetailContent(entry: SongEntry, base: Chart, lib: PatternLibrary, defaul
             StatTile("最佳", entry.bestAccuracy?.let { "%.0f%%".format(it) } ?: "—", Modifier.weight(1f), Palette.SunDeep, Tone.SUN)
         }
         if (base.capo > 0) Hint("Capo 夾第 ${base.capo} 格，和弦按 capo 後嘅指法顯示。", Palette.SunDeep)
+        if (entry.partial) Hint("⚠️ 首歌長過 10 分鐘，只分析咗頭 10 分鐘；之後嘅部分冇和弦。", Palette.SunDeep)
         SectionCard("段落同節奏型", icon = "🧩") {
             if (base.sections.isEmpty()) Hint("冇段落資料，會全首用同一個節奏型。")
             base.sections.forEachIndexed { i, s ->

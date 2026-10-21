@@ -134,6 +134,15 @@ class ScreenshotTest {
             {}, {}, {}, {}, {})
     }
 
+    @Test fun songs_local_long() { tall(); screen("songs") {
+        SongsContent("✗ 連唔到 http://192.168.1.10:8765", "", {}, true, {}, true, 0.37,
+            "首歌有 12:34，手機只分析頭 10 分鐘。\n分析節拍同和弦（手機版，冇分離音軌）…", songs, emptyList(), {}, {}, {}, {}, {})
+    } }
+    @Test fun songs_local_done_partial() = screen("songs") {
+        SongsContent("✗ 連唔到 http://192.168.1.10:8765", "", {}, true, {}, false, 1.0,
+            "✓ 完成：Hotel California（74 BPM，Bm 調，建議 Capo 2）\n⚠️ 首歌長過 10 分鐘，只分析咗頭 10 分鐘。", songs, emptyList(), {}, {}, {}, {}, {})
+    }
+
     // ---------------------------------------------------------------- pushed screens
     private fun songChart(): Chart {
         val prog = listOf("C", "G", "Am", "F")
@@ -141,6 +150,10 @@ class ScreenshotTest {
         val spans = (0 until 40).map { i -> ChordSpan(i * spb, (i + 1) * spb, prog[i % 4]) }
         return Chart(id = "s1", title = "小幸運", bpm = 92.0, chords = spans, kind = "song",
             sections = listOf(Section(0.0, 8 * spb, "前奏", "s_folk"), Section(8 * spb, 24 * spb, "主歌", "s_folk"), Section(24 * spb, 40 * spb, "副歌", "s_8th")))
+    }
+    @Test fun song_detail_partial() = screen {
+        SongDetailContent(songs[1].copy(title = "Hotel California", source = "本機檔案", partial = true), songChart().copy(capo = 2), lib, 1, 0, false,
+            {}, { _, _ -> }, {}, {}) { _, _, _, _, _, _ -> }
     }
     @Test fun song_detail() { tall(); screen { SongDetailContent(songs[0], songChart(), lib, 1, 0, false, {}, { _, _ -> }, {}, {}) { _, _, _, _, _, _ -> } } }
 
@@ -181,6 +194,13 @@ class ScreenshotTest {
     @Test fun settings() { tall(); screen {
         SettingsContent(AppSettings(nickname = "阿晴"), "UNPROCESSED", false, true, "0.2.0", null, {}, {}, {}, {})
     } }
+    @Test fun settings_crash() = screen {
+        SettingsContent(AppSettings(nickname = "阿晴"), "UNPROCESSED", false, true, "0.2.1", null, {}, {}, {}, {},
+            crash = "時間：2025-06-01 21:14:05\nApp：0.2.0 · Android 14 (API 34) · samsung SM-A346E\n記憶體：heap 用咗 250 MB / 上限 256 MB\n" +
+                "當時：分析本機歌：Hotel California (Live).flac（48.2 MB）\nThread：DefaultDispatcher-worker-3\n" +
+                "錯誤：java.lang.OutOfMemoryError: Failed to allocate a 134217744 byte allocation with 25165824 free bytes and 94MB until OOM\n\n" +
+                "java.lang.OutOfMemoryError: …\n\tat java.util.Arrays.copyOf(Arrays.java:3585)")
+    }
     @Test fun calibration() { tall(); screen {
         CalibrationContent(Calibration(142.0, "auto", 6.0, now), null, 0.0, null, 0, "", null, {}, {}, {}, {}, {}, {})
     } }

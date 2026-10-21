@@ -35,6 +35,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.boss.guitartrainer.data.CrashLog
 import com.boss.guitartrainer.dsp.Direction
 import com.boss.guitartrainer.ui.AppState
 import com.boss.guitartrainer.ui.BottomTabs
@@ -63,6 +64,7 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalLayoutApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CrashLog.install(this)      // keeps the last crash so it can be shared from Settings
         // Light, see-through system bars over the cream "morning paper" background.
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),

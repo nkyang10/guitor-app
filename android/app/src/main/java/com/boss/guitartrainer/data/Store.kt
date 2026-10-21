@@ -77,6 +77,8 @@ data class SongEntry(
     val id: String, val title: String, val source: String? = null, val addedAt: Long,
     val bpm: Double = 0.0, val key: String? = null, val hasNoGuitarStem: Boolean = false,
     val bestAccuracy: Double? = null, val local: Boolean = false,
+    /** Only the first [com.boss.guitartrainer.analysis.AudioDecoder.MAX_SECONDS] were analysed (long file). */
+    val partial: Boolean = false,
 )
 
 /** Simple JSON-file persistence (instead of Room: tiny data, no queries needed). */
@@ -131,8 +133,8 @@ class Store private constructor(private val ctx: Context) {
     private val songSer = ListSerializer(SongEntry.serializer())
     private val _songs = MutableStateFlow(load("songs.json", songSer, emptyList()))
     val songs: StateFlow<List<SongEntry>> = _songs
-    fun upsertSong(e: SongEntry) { val v = _songs.value.filter { it.id != e.id } + e; _songs.value = v.sortedByDescending { it.addedAt }; save("songs.json", songSer, _songs.value) }
-    fun deleteSong(id: String) { _songs.value = _songs.value.filter { it.id != id }; save("songs.json", songSer, _songs.value); songDir(id).deleteRecursively() }
+    @Synchronized fun upsertSong(e: SongEntry) { val v = _songs.value.filter { it.id != e.id } + e; _songs.value = v.sortedByDescending { it.addedAt }; save("songs.json", songSer, _songs.value) }
+    @Synchronized fun deleteSong(id: String) { _songs.value = _songs.value.filter { it.id != id }; save("songs.json", songSer, _songs.value); songDir(id).deleteRecursively() }
     fun songChart(id: String): Chart? = try {
         val edited = File(songDir(id), "chart_edited.json"); val f = if (edited.exists()) edited else File(songDir(id), "chart.json")
         Chart.parse(f.readText())

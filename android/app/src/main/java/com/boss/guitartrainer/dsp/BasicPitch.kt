@@ -84,7 +84,12 @@ class BasicPitch(context: Context) : AutoCloseable {
 
 /** Windowed-sinc resampler (any ratio), good enough for analysis (not hi-fi). */
 object Resampler {
-    fun resample(x: FloatArray, srIn: Int, srOut: Int, taps: Int = 16): FloatArray {
+    /** Windowed-sinc resampling. Different rates use the tabulated [StreamResampler] (same kernel, ~20× faster). */
+    fun resample(x: FloatArray, srIn: Int, srOut: Int, taps: Int = 16): FloatArray =
+        if (srIn == srOut) resampleDirect(x, srIn, srOut, taps) else StreamResampler.resample(x, srIn, srOut, taps)
+
+    /** Reference implementation: evaluates the kernel for every tap (slow; kept for tests and equal rates). */
+    fun resampleDirect(x: FloatArray, srIn: Int, srOut: Int, taps: Int = 16): FloatArray {
         val ratio = srOut.toDouble() / srIn
         val n = (x.size * ratio).toInt()
         val out = FloatArray(n)

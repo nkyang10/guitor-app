@@ -32,18 +32,20 @@ object SongAnalyzer {
     class Debug(val bpm: Double, val beats: List<Double>, val chordsPerBeat: List<String>, val key: String)
     @Volatile var lastDebug: Debug? = null
 
-    fun analyze(x: FloatArray, title: String, source: String?, level: Int = 1, progress: (Double) -> Unit = {}): Chart {
+    /** [n] = number of valid samples in [x] (the decoder hands over its buffer without a trimming copy). */
+    fun analyze(x: FloatArray, title: String, source: String?, level: Int = 1, n: Int = x.size, progress: (Double) -> Unit = {}): Chart {
+        require(n in 0..x.size) { "n=$n > ${x.size}" }
         val hopSec = HOP.toDouble() / SR
-        val env = onsetEnvelope(x) { progress(0.05 + 0.3 * it) }
+        val env = onsetEnvelope(x, n) { progress(0.05 + 0.3 * it) }
         val (bpm0, period) = tempo(env, hopSec)
         progress(0.4)
         val beatFrames = beatTrack(env, period)
         // drop beats in leading/trailing silence
-        val rmsOk = activeRange(x)
+        val rmsOk = activeRange(x, n)
         // frame f covers [f*HOP, f*HOP + N): the flux responds when the onset reaches the window centre
         val frameOffset = N_ONSET / 2.0 / SR
         var beats = beatFrames.map { it * hopSec + frameOffset }.filter { it >= rmsOk.first - 0.1 && it <= rmsOk.second + 0.1 }
-        if (beats.size < 8) beats = (0 until (x.size / SR / (60.0 / bpm0)).toInt()).map { it * 60.0 / bpm0 }
+        if (beats.size < 8) beats = (0 until (n / SR / (60.0 / bpm0)).toInt()).map { it * 60.0 / bpm0 }
         // report the tempo the beat tracker actually followed (the grid estimate is only ±1–2 %)
         val bpm = if (beats.size >= 8) {
             // least-squares slope of beat time vs index (a median interval is biased by the ±1-frame quantisation)
@@ -54,7 +56,7 @@ object SongAnalyzer {
             if (slope > 0 && abs(60.0 / slope / bpm0 - 1) < 0.1) 60.0 / slope else bpm0
         } else bpm0
         progress(0.5)
-        val (chroma, bass, energy) = beatChroma(x, beats) { progress(0.5 + 0.3 * it) }
+        val (chroma, bass, energy) = beatChroma(x, beats, n) { progress(0.5 + 0.3 * it) }
         // first pass: uniform change penalty -> estimate downbeat phase -> second pass phase-aware
         val first = viterbi(chroma, bass, energy, -1)
         val phase = downbeatPhase(first, energy)
@@ -89,11 +91,11 @@ object SongAnalyzer {
     }
 
     // ------------------------------------------------------------------ onset envelope
-    fun onsetEnvelope(x: FloatArray, progress: (Double) -> Unit = {}): DoubleArray {
+    fun onsetEnvelope(x: FloatArray, n: Int = x.size, progress: (Double) -> Unit = {}): DoubleArray {
         val fft = Fft(N_ONSET); val win = Fft.hann(N_ONSET)
         val nBins = N_ONSET / 2 + 1
         val kMax = (8000.0 * N_ONSET / SR).toInt().coerceAtMost(nBins - 1)
-        val nFrames = max(0, (x.size - N_ONSET) / HOP + 1)
+        val nFrames = max(0, (n - N_ONSET) / HOP + 1)
         val mag = DoubleArray(nBins)
         var prev = DoubleArray(kMax + 1)
         var cur = DoubleArray(kMax + 1)
@@ -205,10 +207,10 @@ object SongAnalyzer {
         return beats
     }
 
-    private fun activeRange(x: FloatArray): Pair<Double, Double> {
+    private fun activeRange(x: FloatArray, len: Int = x.size): Pair<Double, Double> {
         val blk = SR / 10
-        val n = x.size / blk
-        if (n == 0) return 0.0 to x.size.toDouble() / SR
+        val n = len / blk
+        if (n == 0) return 0.0 to len.toDouble() / SR
         val r = DoubleArray(n) { b -> var s = 0.0; for (i in b * blk until (b + 1) * blk) s += x[i] * x[i]; sqrt(s / blk) }
         val mx = r.max().coerceAtLeast(1e-9)
         val thr = mx * 0.03
@@ -220,11 +222,11 @@ object SongAnalyzer {
     // ------------------------------------------------------------------ chroma
     data class BeatChroma(val chroma: List<DoubleArray>, val bass: List<DoubleArray>, val energy: DoubleArray)
 
-    fun beatChroma(x: FloatArray, beats: List<Double>, progress: (Double) -> Unit = {}): BeatChroma {
+    fun beatChroma(x: FloatArray, beats: List<Double>, n: Int = x.size, progress: (Double) -> Unit = {}): BeatChroma {
         val fft = Fft(N_CHROMA); val win = Fft.hann(N_CHROMA)
         val mag = DoubleArray(N_CHROMA / 2 + 1)
         val binHz = SR.toDouble() / N_CHROMA
-        val nFrames = max(0, (x.size - N_CHROMA) / HOP_CHROMA + 1)
+        val nFrames = max(0, (n - N_CHROMA) / HOP_CHROMA + 1)
         val frameC = ArrayList<DoubleArray>(nFrames); val frameB = ArrayList<DoubleArray>(nFrames); val frameE = DoubleArray(nFrames)
         // semitone salience (max magnitude within +-0.5 semitone) so dense high-frequency bins do not dominate
         val mLo = 36; val mHi = 95; val mBass = 55
