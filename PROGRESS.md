@@ -53,8 +53,13 @@ Task index -> page id (https://app.notion.com/p/<id>):
 47 AEC 6b9a0366c4bb4fad8a81c261997aa258
 48 smartwatch fallback ebad822fe1f64910aea209635f840538
 49 on-device song analysis 1fb3ff83fb5844d7b572e2e03b30ab3d
+50 song key change moves whole chart [PENDING] 29159934d8f94551b150b49bf3a28234
+51 song pattern levels 簡單/一般/原曲/進階 [PENDING] d7a3845c614e48679699276916c8a2ab
+52 bigger chord font in song practice [PENDING] a3984d94607f4dde8d0bc01253d8765c
+53 song beat sync [PENDING] 377412874d304b8d8c8c0a381399ac1a
 
 ## Done log
-- v0.2.2: all flower emoji in the app replaced with music emoji (🌼 → 🎵/🎶, 🌷 → 🎧/🎶/🎤; tab「我的」+ avatar 🎧, week dots 🎵, level「練習生 🎵」); DESIGN.md「本星期音符」. Same signing key → installs over v0.2.1.
+- v0.2.3 歌曲 tab (merged from the 歌曲-tab session's patch on v0.2.0 + v0.2.2): key change moves the whole chart (+ optional pitch follow, capo re-suggested, chord edit one / all same / whole key), 4 pattern levels per section (簡單/一般/原曲/進階; 原曲 read from the onset envelope), bigger chord card in practice (64 sp), beat sync (RhythmAnalyzer envelope + DP tracking, auto-align once, 試聽 click preview, grid fixes, tap sync, live 拍子早咗/遲咗 nudge saved per song). Song page moved to ui/SongDetail.kt (+ SongTools.kt); v0.2.1 partial-song hint ported. Per-song files: song_prefs.json, beat_grid.json, rhythm_env.bin (chart.json untouched; 還原 clears). Tasks 50–53 → 待你處理.
+- v0.2.2: all flower emoji in the app replaced with music emoji (🌼 → 🎵/🎶, 🌷 → 🎧/🎶; tab「我的」+ avatar 🎧, week dots 🎵, level「練習生 🎵」); DESIGN.md「本星期音符」. Same signing key → installs over v0.2.1.
 - v0.2.1 fix: app crashed when analysing a local song (old decoder kept the whole song at full rate + copies → OOM on long / hi-res files). Streaming decode + resample (10-min song ≈ 64 MB peak vs OOM before), app-scope SongImporter (one job, survives tab switches, cancel), 10-minute notice (status + song page), 300 MB / 10 s / no-chord guards, real file names as titles, crash log in Settings (share), largeHeap. +12 unit tests (StreamResampler, Pcm, DecodeMemoryTest in a 128 MB JVM), +4 screenshots.
 - v0.2.0「晨光」UI/UX redesign (for beginner / girl guitarists, bright-morning feel): new palette + Nunito/Pacifico fonts, 4 tabs (今日/練習/歌曲/我的), beginner roadmap, daily goal + chord of the day + nickname greeting, restyled game lane/tuner/results/stats, custom slider + haptics, adaptive icon, local-day streak fix (Days.kt), 33 Paparazzi screenshot tests. See docs/DESIGN.md.

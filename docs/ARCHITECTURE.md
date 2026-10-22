@@ -26,11 +26,11 @@
 | `audio/` | 麥克風 / 喇叭引擎、節拍機、即時分析 | `AudioEngine.kt`（UNPROCESSED 優先，唔支援就用 VOICE_RECOGNITION）、`MicSession.kt`、`AudioRing.kt`、`ClickTrack.kt`、`LiveAnalyzer.kt` |
 | `dsp/` | 音高、onset、和弦 chroma、掃弦方向、Basic Pitch、resample | `Pitch.kt`（MPM）、`OnsetDetector.kt`、`ChordAnalyzer.kt`、`DirectionModel.kt`、`BasicPitch.kt`（TFLite）、`Fft.kt`、`StreamResampler.kt` |
 | `game/` | 判定、難度、遊戲 session、校準、成績 | `Judge.kt`、`Difficulty.kt`、`GameSession.kt`、`NoteVerifier.kt`、`Calibrator.kt`、`Summary.kt` |
-| `music/` | 樂理、和弦庫、節奏型、Chart | `Chords.kt`、`ChordNames.kt`、`Theory.kt`、`Patterns.kt`、`Chart.kt`、`ChartBuilder.kt` |
-| `analysis/` | 本機歌曲分析 | `AudioDecoder.kt`（MediaCodec，串流解碼）、`Pcm.kt`（PCM → mono）、`SongAnalyzer.kt` |
+| `music/` | 樂理、和弦庫、節奏型、Chart | `Chords.kt`、`ChordNames.kt`、`Theory.kt`、`Patterns.kt`、`Chart.kt`、`ChartBuilder.kt`、`SongSetup.kt`（每首歌設定）、`PatternSuggest.kt`（4 級節奏型） |
+| `analysis/` | 本機歌曲分析 | `AudioDecoder.kt`（MediaCodec，串流解碼）、`Pcm.kt`（PCM → mono）、`SongAnalyzer.kt`、`RhythmAnalyzer.kt`（節拍包絡 / beat tracking / 對拍） |
 | `net/` | 連屋企 server | `ServerApi.kt` |
 | `data/` | 本機儲存（JSON）、本地日期 / 連續日數、加歌 job、閃退紀錄 | `Store.kt`、`Days.kt`、`SongImporter.kt`、`CrashLog.kt` |
-| `ui/` | Compose 畫面（設計見 [DESIGN.md](DESIGN.md)） | `Theme.kt`（色板 / 字體 / 元件）、`Navigation.kt`（4 個 tab）、`HomeScreen.kt`（今日）、`PracticeHubScreen.kt`（練習）、`StatsScreen.kt`（我的）、`TunerScreen.kt`、`MetronomeScreen.kt`、`PracticeScreen.kt`、`ChordScreens.kt`、`SongScreens.kt`、`GameScreen.kt`、`ResultsScreen.kt`、`CalibrationScreen.kt`、`SettingsScreen.kt` 等 |
+| `ui/` | Compose 畫面（設計見 [DESIGN.md](DESIGN.md)） | `Theme.kt`（色板 / 字體 / 元件）、`Navigation.kt`（4 個 tab）、`HomeScreen.kt`（今日）、`PracticeHubScreen.kt`（練習）、`StatsScreen.kt`（我的）、`TunerScreen.kt`、`MetronomeScreen.kt`、`PracticeScreen.kt`、`ChordScreens.kt`、`SongScreens.kt`（歌曲列表）、`SongDetail.kt`（歌曲頁）、`SongTools.kt`（換 Key / 節奏型 / 拍子工具）、`GameScreen.kt`、`ResultsScreen.kt`、`CalibrationScreen.kt`、`SettingsScreen.kt` 等 |
 
 ## 3. Server
 
@@ -63,6 +63,12 @@
 
 ### 4.3 Server 分析
 YouTube link / 上傳 → yt-dlp 下載 → ffmpeg 解碼 →（可選）Demucs `htdemucs_6s` 分離 → `analysis.py` → `chart.json` + `mix.m4a` + `no_guitar.m4a` → 手機 `ServerApi` 拎返 cache。
+
+### 4.4 跟歌設定（v0.2.3）
+`chart.json` 永遠唔改；用家嘅改動每首歌分開存喺 `songDir(id)`：`song_prefs.json`（`SongPrefs`：transpose、首歌一齊升降、capo、節奏型級數 / 類別、每段自選、offset）、`beat_grid.json`（`BeatGrid`，修正過嘅拍子）、`rhythm_env.bin`（`OnsetEnvelope` cache，3-band spectral flux 100 fps，10 分鐘約 0.5 MB，最多分析 15 分鐘）。「還原」會清走呢啲檔。
+`SongSetup.effective()` 疊加次序：拍子格 → 換 Key（和弦 + key）→ capo（自己揀就跟自己，否則按新 Key 重新建議）→ `pitchShift`（首歌一齊升降，`GameSession` 用 `PlaybackParameters` 變調）→ offset。
+`PatternSuggest`：每段 4 級（簡單 / 一般 / 原曲 / 進階）；「原曲」由 onset 包絡讀出每小節 16 格嘅重音，唔喺節奏型庫嘅會生成 `orig:…` id（唔寫入 patterns.json）。`ChartBuilder.song()` 逐小節放節奏型，唔會溢出去下一小節。
+對拍：`RhythmAnalyzer` 做 tempo + DP beat tracking，第一次建好包絡後自動對準一次（明顯更啱先改，可以復原）；「試聽」= 首歌 + 嗒聲；跟彈時「拍子早咗 / 遲咗」±20 ms，完成時存返落首歌。
 
 ## 5. 關鍵參數（Phase 0 定案）
 
